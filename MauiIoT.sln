@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiIoT", "MauiIoT\MauiIoT.csproj", "{6482E51B-6667-49D9-B1AD-AC6841985DCD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpServer", "McpServer\McpServer.csproj", "{DB8578AB-E314-4F12-89AF-256C6F5869E8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6482E51B-6667-49D9-B1AD-AC6841985DCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6482E51B-6667-49D9-B1AD-AC6841985DCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6482E51B-6667-49D9-B1AD-AC6841985DCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6482E51B-6667-49D9-B1AD-AC6841985DCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB8578AB-E314-4F12-89AF-256C6F5869E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB8578AB-E314-4F12-89AF-256C6F5869E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB8578AB-E314-4F12-89AF-256C6F5869E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB8578AB-E314-4F12-89AF-256C6F5869E8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

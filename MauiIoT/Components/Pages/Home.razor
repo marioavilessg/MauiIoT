@@ -1,0 +1,72 @@
+﻿@page "/"
+@inject McpClientService mcp
+@inject LLMService llm
+
+<h3>Control de Luces IoT</h3>
+
+<input @bind="comando" placeholder="Escribe un comando..." />
+
+<button @onclick="EnviarComando">Enviar</button>
+
+<hr />
+
+<h4>Test rápido</h4>
+
+<button @onclick="@(() => EjecutarTool("encender_luz_roja"))">Roja</button>
+<button @onclick="@(() => EjecutarTool("encender_luz_verde"))">Verde</button>
+<button @onclick="@(() => EjecutarTool("encender_luz_amarilla"))">Amarilla</button>
+
+<p>@resultado</p>
+
+@code {
+    string comando = "";
+    string resultado = "";
+
+    async Task EnviarComando()
+    {
+        resultado = "Procesando...";
+
+        try
+        {
+            var json = await llm.ProcesarComando(comando);
+            var lower = json.ToLower();
+
+            if (lower.Contains("encender_luz_roja"))
+            {
+                await mcp.Ejecutar("encender_luz_roja");
+                resultado = "Luz roja encendida";
+            }
+            else if (lower.Contains("encender_luz_verde"))
+            {
+                await mcp.Ejecutar("encender_luz_verde");
+                resultado = "Luz verde encendida";
+            }
+            else if (lower.Contains("encender_luz_amarilla"))
+            {
+                await mcp.Ejecutar("encender_luz_amarilla");
+                resultado = "Luz amarilla encendida";
+            }
+            else
+            {
+                resultado = "No se entendió el comando";
+            }
+        }
+        catch (Exception ex)
+        {
+            resultado = ex.Message;
+        }
+    }
+
+    async Task EjecutarTool(string tool)
+    {
+        await mcp.Ejecutar(tool);
+
+        resultado = tool switch
+        {
+            "encender_luz_roja" => "Luz roja encendida",
+            "encender_luz_verde" => "Luz verde encendida",
+            "encender_luz_amarilla" => "Luz amarilla encendida",
+            _ => "Acción ejecutada"
+        };
+    }
+}
