@@ -56,14 +56,11 @@
     </script>
     
     <script>
-        // Configura el textarea del chat:
-        // - Enter => previene salto de línea, limpia el DOM y llama a Blazor
-        // - Shift+Enter => deja funcionar normalmente (nueva línea)
+
         window.setupChatInput = function (dotNetRef, elementId) {
             const el = document.getElementById(elementId);
             if (!el) return;
 
-            // Elimina listener previo si se re-inicializa
             if (el._chatKeyHandler) {
                 el.removeEventListener('keydown', el._chatKeyHandler);
             }
@@ -73,10 +70,8 @@
                     e.preventDefault();
                     const text = el.value.trim();
                     if (!text) return;
-                    // Limpia el textarea en el DOM de inmediato
                     el.value = '';
                     el.style.height = '46px';
-                    // Notifica a Blazor de forma asíncrona
                     dotNetRef.invokeMethodAsync('OnEnterPressed', text);
                 }
             };

@@ -258,27 +258,23 @@
     {
         if (firstRender)
         {
-            // Registra el listener de Enter en JS (síncrono, evita el salto de línea)
             _dotNetRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("setupChatInput", _dotNetRef, "chat-input");
             await ScrollToBottom();
         }
     }
 
-    // Llamado desde JS cuando el usuario pulsa Enter
     [JSInvokable]
     public async Task OnEnterPressed(string text)
     {
         await EnviarComandoConTexto(text);
     }
 
-    // El oninput solo actualiza 'comando' para que el botón Enviar sepa si hay texto
     void HandleInput(ChangeEventArgs e)
     {
         comando = e.Value?.ToString() ?? "";
     }
 
-    // Enviar desde el botón (click)
     async Task EnviarComando()
     {
         if (string.IsNullOrWhiteSpace(comando) || isTyping) return;
