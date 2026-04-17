@@ -190,22 +190,21 @@
         <div class="flex gap-2 items-end" style="max-width:800px;margin:0 auto">
 
             <div style="flex:1;position:relative">
-                <textarea id="chat-input"
-                          value="@comando"
-                          @oninput="HandleInput"
-                          @onkeydown="HandleKeyDown"
-                          rows="1"
-                          placeholder="Escribe un comando… ej: 'Enciende la luz roja'"
-                          style="width:100%;background:#1a2132;
-                                 border:1px solid rgba(255,255,255,.1);
-                                 border-radius:14px;padding:12px 16px;
-                                 font-size:13px;color:#f3f4f6;
-                                 font-family:'Inter',system-ui,sans-serif;
-                                 resize:none;outline:none;
-                                 line-height:1.5;min-height:46px;max-height:128px;
-                                 overflow-y:auto;box-sizing:border-box;
-                                 transition:border-color .2s;
-                                 placeholder-color:#4b5563">
+                <textarea
+                            id="chat-input"
+                            @oninput="HandleInput"
+                            rows="1"
+                            placeholder="Escribe un comando… ej: 'Enciende la luz roja'"
+                            style="width:100%;background:#1a2132;
+                                     border:1px solid rgba(255,255,255,.1);
+                                     border-radius:14px;padding:12px 16px;
+                                     font-size:13px;color:#f3f4f6;
+                                     font-family:'Inter',system-ui,sans-serif;
+                                     resize:none;outline:none;
+                                     line-height:1.5;min-height:46px;max-height:128px;
+                                     overflow-y:auto;box-sizing:border-box;
+                                     transition:border-color .2s;
+                                     placeholder-color:#4b5563">
                 </textarea>
             </div>
 
@@ -218,7 +217,7 @@
                            display:flex;align-items:center;justify-content:center;
                            box-shadow:0 4px 14px rgba(6,182,212,.35);
                            transition:all .2s;opacity:@(isTyping || string.IsNullOrWhiteSpace(comando) ? "0.35" : "1")">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                <svg width="20" height="20" viewBox="0 0 24 24c" fill="white">
                     <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
                 </svg>
             </button>
@@ -234,10 +233,12 @@
 @code {
     record ChatMessage(string Role, string Content, string? LightColor, DateTime Time);
 
-    string  comando    = "";
-    bool    isTyping   = false;
+    string  comando     = "";
+    bool    isTyping    = false;
     bool    isConnected = true;
-    string? activeLed  = null;
+    string? activeLed   = null;
+    CancellationTokenSource?  _cts;
+    DotNetObjectReference<Home>? _dotNetRef;
 
     List<ChatMessage> messages = new();
 
@@ -248,92 +249,151 @@
             "¡Hola! 👋 Soy tu asistente IoT. Puedo controlar las luces de tu placa Wokwi.\n\nPrueba con frases como:\n• \"Enciende la luz roja\"\n• \"Activa el LED verde\"\n• \"Pon la luz amarilla\"",
             null,
             DateTime.Now));
+
+        _cts = new CancellationTokenSource();
+        _ = MonitorConexion();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
+        {
+            // Registra el listener de Enter en JS (síncrono, evita el salto de línea)
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("setupChatInput", _dotNetRef, "chat-input");
             await ScrollToBottom();
+        }
     }
 
-    async Task HandleInput(ChangeEventArgs e)
+    // Llamado desde JS cuando el usuario pulsa Enter
+    [JSInvokable]
+    public async Task OnEnterPressed(string text)
+    {
+        await EnviarComandoConTexto(text);
+    }
+
+    // El oninput solo actualiza 'comando' para que el botón Enviar sepa si hay texto
+    void HandleInput(ChangeEventArgs e)
     {
         comando = e.Value?.ToString() ?? "";
-        await JS.InvokeVoidAsync("autoGrow", "chat-input");
     }
 
-    async Task HandleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter" && !e.ShiftKey)
-            await EnviarComando();
-    }
-
+    // Enviar desde el botón (click)
     async Task EnviarComando()
     {
         if (string.IsNullOrWhiteSpace(comando) || isTyping) return;
-
-        var userMsg = comando.Trim();
+        var text = comando.Trim();
         comando = "";
-        isTyping = true;
-
-        messages.Add(new ChatMessage("user", userMsg, null, DateTime.Now));
         StateHasChanged();
-        await ScrollToBottom();
+        // Limpia el DOM del textarea también
+        try { await JS.InvokeVoidAsync("resetInput", "chat-input"); } catch { }
+        await EnviarComandoConTexto(text);
+    }
 
-        try
-        {
-            var toolName = await llm.ProcesarComando(userMsg);
-            var lower    = toolName.ToLower();
+    async Task EnviarComandoConTexto(string userMsg)
+    {
+    if (string.IsNullOrWhiteSpace(userMsg) || isTyping) return;
 
-            string? lightColor;
-            string  response;
+    comando  = "";
+    isTyping = true;
+    StateHasChanged();
 
-            if (lower.Contains("encender_luz_roja"))
-            {
-                await mcp.Ejecutar("encender_luz_roja");
-                activeLed  = "roja";
-                lightColor = "roja";
-                response   = "✅ Luz roja encendida en tu placa Wokwi.";
-                isConnected = true;
-            }
-            else if (lower.Contains("encender_luz_verde"))
-            {
-                await mcp.Ejecutar("encender_luz_verde");
-                activeLed  = "verde";
-                lightColor = "verde";
-                response   = "✅ Luz verde encendida en tu placa Wokwi.";
-                isConnected = true;
-            }
-            else if (lower.Contains("encender_luz_amarilla"))
-            {
-                await mcp.Ejecutar("encender_luz_amarilla");
-                activeLed  = "amarilla";
-                lightColor = "amarilla";
-                response   = "✅ Luz amarilla encendida en tu placa Wokwi.";
-                isConnected = true;
-            }
-            else
-            {
-                lightColor = null;
-                response   = "🤔 No identifiqué un comando de luz. Intenta con:\n\"Enciende la luz roja / verde / amarilla\"";
-            }
+    messages.Add(new ChatMessage("user", userMsg, null, DateTime.Now));
+    StateHasChanged();
+    await ScrollToBottom();
 
-            messages.Add(new ChatMessage("assistant", response, lightColor, DateTime.Now));
-        }
-        catch (Exception ex)
+    try
+    {
+        var toolName = await llm.ProcesarComando(userMsg);
+
+        // CASO 1: LM Studio apagado o error HTTP
+        if (toolName == null)
         {
             isConnected = false;
+
             messages.Add(new ChatMessage(
                 "assistant",
-                $"⚠️ Error de conexión:\n{ex.Message}\n\nAsegúrate de que LM Studio esté corriendo en localhost:1234.",
+                "⚠️ El modelo de IA no está activo.\n\nArranca LM Studio y carga un modelo.",
                 null,
                 DateTime.Now));
+
+            isTyping = false;
+            StateHasChanged();
+            await ScrollToBottom();
+            return;
         }
 
-        isTyping = false;
-        StateHasChanged();
-        await ScrollToBottom();
+        // CASO 2: modelo no responde correctamente
+        if (string.IsNullOrWhiteSpace(toolName))
+        {
+            isConnected = false;
+
+            messages.Add(new ChatMessage(
+                "assistant",
+                "⚠️ El modelo no ha respondido correctamente.\n¿Está cargado en LM Studio?",
+                null,
+                DateTime.Now));
+
+            isTyping = false;
+            StateHasChanged();
+            await ScrollToBottom();
+            return;
+        }
+
+        var lower = toolName.ToLower();
+
+        string? lightColor;
+        string  response;
+
+        // CASO 3: ejecución normal
+        if (lower.Contains("encender_luz_roja"))
+        {
+            await mcp.Ejecutar("encender_luz_roja");
+            activeLed  = "roja";
+            lightColor = "roja";
+            response   = "✅ Luz roja encendida en tu placa Wokwi.";
+            isConnected = true;
+        }
+        else if (lower.Contains("encender_luz_verde"))
+        {
+            await mcp.Ejecutar("encender_luz_verde");
+            activeLed  = "verde";
+            lightColor = "verde";
+            response   = "✅ Luz verde encendida en tu placa Wokwi.";
+            isConnected = true;
+        }
+        else if (lower.Contains("encender_luz_amarilla"))
+        {
+            await mcp.Ejecutar("encender_luz_amarilla");
+            activeLed  = "amarilla";
+            lightColor = "amarilla";
+            response   = "✅ Luz amarilla encendida en tu placa Wokwi.";
+            isConnected = true;
+        }
+        else
+        {
+            // CASO 4: respuesta válida pero no reconocida
+            lightColor = null;
+            response   = "🤔 No identifiqué un comando de luz. Intenta con:\n\"Enciende la luz roja / verde / amarilla\"";
+        }
+
+        messages.Add(new ChatMessage("assistant", response, lightColor, DateTime.Now));
     }
+    catch (Exception ex)
+    {
+        isConnected = false;
+
+        messages.Add(new ChatMessage(
+            "assistant",
+            $"⚠️ Error de conexión:\n{ex.Message}\n\nRevisa LM Studio o el MCP Server.",
+            null,
+            DateTime.Now));
+    }
+
+    isTyping = false;
+    StateHasChanged();
+    await ScrollToBottom();
+}
 
     async Task EjecutarTool(string tool)
     {
@@ -401,5 +461,35 @@
     {
         try { await JS.InvokeVoidAsync("scrollToBottom", "chat-container"); }
         catch { /* WebView not ready */ }
+    }
+    
+    async Task MonitorConexion()
+    {
+        while (!_cts!.IsCancellationRequested)
+        {
+            try
+            {
+                var disponible = await llm.IsModelAvailable();
+
+                if (disponible != isConnected)
+                {
+                    isConnected = disponible;
+                    StateHasChanged();
+                }
+            }
+            catch
+            {
+                isConnected = false;
+                StateHasChanged();
+            }
+
+            await Task.Delay(3000); // cada 3 segundos
+        }
+    }
+    
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _dotNetRef?.Dispose();
     }
 }

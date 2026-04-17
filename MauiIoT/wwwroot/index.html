@@ -54,6 +54,36 @@
             }
         }
     </script>
+    
+    <script>
+        // Configura el textarea del chat:
+        // - Enter => previene salto de línea, limpia el DOM y llama a Blazor
+        // - Shift+Enter => deja funcionar normalmente (nueva línea)
+        window.setupChatInput = function (dotNetRef, elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+
+            // Elimina listener previo si se re-inicializa
+            if (el._chatKeyHandler) {
+                el.removeEventListener('keydown', el._chatKeyHandler);
+            }
+
+            el._chatKeyHandler = function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const text = el.value.trim();
+                    if (!text) return;
+                    // Limpia el textarea en el DOM de inmediato
+                    el.value = '';
+                    el.style.height = '46px';
+                    // Notifica a Blazor de forma asíncrona
+                    dotNetRef.invokeMethodAsync('OnEnterPressed', text);
+                }
+            };
+
+            el.addEventListener('keydown', el._chatKeyHandler);
+        };
+    </script>
 
     <!-- Minimal base overrides -->
     <link rel="stylesheet" href="css/app.css" />
@@ -102,6 +132,14 @@
             if (!el) return;
             el.style.height = 'auto';
             el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+        };
+
+        // Limpia el textarea (usado por el botón Enviar)
+        window.resetInput = function (id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.value = '';
+            el.style.height = '46px';
         };
     </script>
 
