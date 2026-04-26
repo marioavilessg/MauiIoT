@@ -1,100 +1,37 @@
 @page "/"
-@inject McpClientService mcp
-@inject LLMService llm
+
 @inject IJSRuntime JS
 
 <div class="flex flex-col h-full bg-[#0d1117] overflow-hidden" style="font-family:'Inter',system-ui,sans-serif">
 
-    @* ── HEADER ───────────────────────────────────────── *@
+    <!-- HEADER -->
     <header class="flex-shrink-0 flex items-center justify-between px-5 py-3"
             style="background:#111827;border-bottom:1px solid rgba(255,255,255,0.06);box-shadow:0 4px 24px rgba(0,0,0,0.4)">
 
         <div class="flex items-center gap-3">
             <div style="width:36px;height:36px;border-radius:10px;
                         background:linear-gradient(135deg,#06b6d4,#1d4ed8);
-                        display:flex;align-items:center;justify-content:center;
-                        box-shadow:0 0 16px rgba(6,182,212,0.35)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
+                        display:flex;align-items:center;justify-content:center;">
+                ⚡
             </div>
             <div>
-                <h1 style="margin:0;font-size:14px;font-weight:700;color:#f9fafb;line-height:1">IoT Assistant</h1>
+                <h1 style="margin:0;font-size:14px;font-weight:700;color:#f9fafb;">IoT Assistant</h1>
                 <p style="margin:2px 0 0;font-size:10px;color:#6b7280">Wokwi Board Control</p>
             </div>
         </div>
 
         <div class="flex items-center gap-3">
-            @if (activeLed != null)
-            {
-                <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;
-                            border-radius:999px;background:rgba(255,255,255,0.05);
-                            border:1px solid rgba(255,255,255,0.1)">
-                    <span style="width:8px;height:8px;border-radius:50%;display:inline-block;@GetActiveLedStyle()"></span>
-                    <span style="font-size:11px;color:#d1d5db;font-weight:500;text-transform:capitalize">Luz @activeLed</span>
-                </div>
-            }
             <div style="display:flex;align-items:center;gap:6px">
-                <span style="width:8px;height:8px;border-radius:50%;display:inline-block;
-                             background:@(isConnected ? "#34d399" : "#f87171");
-                             box-shadow:0 0 6px @(isConnected ? "#34d399" : "#f87171")"></span>
-                <span style="font-size:11px;color:#9ca3af">@(isConnected ? "Conectado" : "Sin conexión")</span>
+                <span style="width:8px;height:8px;border-radius:50%;
+                             background:@(isConnected ? "#34d399" : "#f87171")"></span>
+                <span style="font-size:11px;color:#9ca3af">
+                    @(isConnected ? "Conectado" : "Sin conexión")
+                </span>
             </div>
         </div>
     </header>
 
-    @* ── LED QUICK ACTIONS ──────────────────────────────── *@
-    <div class="flex-shrink-0 flex items-center justify-center gap-3 px-5 py-2"
-         style="background:#0d1117;border-bottom:1px solid rgba(255,255,255,0.05)">
-
-        <span style="font-size:10px;color:#4b5563;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-right:4px">
-            Acción rápida
-        </span>
-
-        <button id="btn-red" @onclick="@(() => EjecutarTool("encender_luz_roja"))"
-                disabled="@isTyping"
-                style="display:flex;align-items:center;gap:6px;padding:5px 14px;
-                       border-radius:999px;border:1px solid @(activeLed=="roja" ? "rgba(239,68,68,.6)" : "rgba(75,85,99,1)");
-                       background:@(activeLed=="roja" ? "rgba(239,68,68,.12)" : "transparent");
-                       color:@(activeLed=="roja" ? "#f87171" : "#9ca3af");
-                       font-size:12px;font-weight:500;cursor:pointer;
-                       transition:all .2s;font-family:inherit">
-            <span style="width:10px;height:10px;border-radius:50%;display:inline-block;
-                         background:@(activeLed=="roja" ? "#ef4444" : "#4b5563");
-                         @(activeLed=="roja" ? "box-shadow:0 0 8px #ef4444;animation:glow-red 1.4s ease-in-out infinite" : "")"></span>
-            Roja
-        </button>
-
-        <button id="btn-green" @onclick="@(() => EjecutarTool("encender_luz_verde"))"
-                disabled="@isTyping"
-                style="display:flex;align-items:center;gap:6px;padding:5px 14px;
-                       border-radius:999px;border:1px solid @(activeLed=="verde" ? "rgba(34,197,94,.6)" : "rgba(75,85,99,1)");
-                       background:@(activeLed=="verde" ? "rgba(34,197,94,.12)" : "transparent");
-                       color:@(activeLed=="verde" ? "#4ade80" : "#9ca3af");
-                       font-size:12px;font-weight:500;cursor:pointer;
-                       transition:all .2s;font-family:inherit">
-            <span style="width:10px;height:10px;border-radius:50%;display:inline-block;
-                         background:@(activeLed=="verde" ? "#22c55e" : "#4b5563");
-                         @(activeLed=="verde" ? "box-shadow:0 0 8px #22c55e;animation:glow-green 1.4s ease-in-out infinite" : "")"></span>
-            Verde
-        </button>
-
-        <button id="btn-yellow" @onclick="@(() => EjecutarTool("encender_luz_amarilla"))"
-                disabled="@isTyping"
-                style="display:flex;align-items:center;gap:6px;padding:5px 14px;
-                       border-radius:999px;border:1px solid @(activeLed=="amarilla" ? "rgba(234,179,8,.6)" : "rgba(75,85,99,1)");
-                       background:@(activeLed=="amarilla" ? "rgba(234,179,8,.12)" : "transparent");
-                       color:@(activeLed=="amarilla" ? "#facc15" : "#9ca3af");
-                       font-size:12px;font-weight:500;cursor:pointer;
-                       transition:all .2s;font-family:inherit">
-            <span style="width:10px;height:10px;border-radius:50%;display:inline-block;
-                         background:@(activeLed=="amarilla" ? "#eab308" : "#4b5563");
-                         @(activeLed=="amarilla" ? "box-shadow:0 0 8px #eab308;animation:glow-yellow 1.4s ease-in-out infinite" : "")"></span>
-            Amarilla
-        </button>
-    </div>
-
-    @* ── CHAT MESSAGES ─────────────────────────────────── *@
+    <!-- CHAT -->
     <div id="chat-container"
          class="flex-1 overflow-y-auto px-4 py-5"
          style="display:flex;flex-direction:column;gap:14px">
@@ -103,155 +40,86 @@
         {
             if (msg.Role == "user")
             {
-                @* User bubble — right *@
-                <div style="display:flex;justify-content:flex-end;animation:slideUp .25s ease-out">
+                <div style="display:flex;justify-content:flex-end;">
                     <div style="max-width:75%">
                         <div style="background:linear-gradient(135deg,#0891b2,#1d4ed8);color:white;
-                                    border-radius:18px 18px 4px 18px;padding:10px 16px;
-                                    box-shadow:0 4px 16px rgba(29,78,216,.35);
-                                    border:1px solid rgba(255,255,255,.1)">
-                            <p style="margin:0;font-size:13px;line-height:1.5;white-space:pre-wrap">@msg.Content</p>
+                                    border-radius:18px 18px 4px 18px;padding:10px 16px;">
+                            @msg.Content
                         </div>
-                        <p style="margin:4px 4px 0 0;font-size:10px;color:#4b5563;text-align:right">
-                            @msg.Time.ToString("HH:mm")
-                        </p>
                     </div>
                 </div>
             }
             else
             {
-                @* Assistant bubble — left *@
-                <div style="display:flex;justify-content:flex-start;gap:10px;animation:slideUp .25s ease-out">
-                    <div style="width:28px;height:28px;flex-shrink:0;border-radius:50%;
-                                background:linear-gradient(135deg,#7c3aed,#4338ca);
-                                display:flex;align-items:center;justify-content:center;
-                                font-size:13px;margin-top:2px;
-                                box-shadow:0 2px 8px rgba(79,54,213,.4);
-                                border:1px solid rgba(255,255,255,.1)">
-                        🤖
-                    </div>
+                <div style="display:flex;justify-content:flex-start;">
                     <div style="max-width:75%">
-                        <div style="@GetBubbleStyle(msg.LightColor)
-                                    border-radius:18px 18px 18px 4px;padding:10px 16px;
-                                    box-shadow:0 2px 12px rgba(0,0,0,.3);
-                                    border:1px solid rgba(255,255,255,.06)">
-                            <p style="margin:0;font-size:13px;line-height:1.5;color:#f3f4f6;white-space:pre-wrap">@msg.Content</p>
-                            @if (msg.LightColor != null)
-                            {
-                                <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1);
-                                            display:flex;align-items:center;gap:8px">
-                                    <span style="width:10px;height:10px;border-radius:50%;display:inline-block;
-                                                 @GetLedStyle(msg.LightColor)"></span>
-                                    <span style="font-size:10px;color:#6b7280">LED activo · Wokwi</span>
-                                </div>
-                            }
+                        <div style="background:#1a2132;border-radius:18px 18px 18px 4px;
+                                    padding:10px 16px;color:#f3f4f6;">
+                            @msg.Content
                         </div>
-                        <p style="margin:4px 0 0 4px;font-size:10px;color:#4b5563">
-                            @msg.Time.ToString("HH:mm")
-                        </p>
                     </div>
                 </div>
             }
         }
 
-        @* Typing indicator *@
         @if (isTyping)
         {
-            <div style="display:flex;justify-content:flex-start;gap:10px;animation:slideUp .25s ease-out">
-                <div style="width:28px;height:28px;flex-shrink:0;border-radius:50%;
-                            background:linear-gradient(135deg,#7c3aed,#4338ca);
-                            display:flex;align-items:center;justify-content:center;font-size:13px;
-                            border:1px solid rgba(255,255,255,.1)">
-                    🤖
-                </div>
-                <div style="background:#1a2132;border-radius:18px 18px 18px 4px;padding:12px 18px;
-                            border:1px solid rgba(255,255,255,.06)">
-                    <div style="display:flex;gap:5px;align-items:center;height:16px">
-                        <span style="width:8px;height:8px;border-radius:50%;background:#06b6d4;
-                                     display:inline-block;animation:bounce 0.9s ease-in-out infinite;
-                                     animation-delay:0ms"></span>
-                        <span style="width:8px;height:8px;border-radius:50%;background:#06b6d4;
-                                     display:inline-block;animation:bounce 0.9s ease-in-out infinite;
-                                     animation-delay:160ms"></span>
-                        <span style="width:8px;height:8px;border-radius:50%;background:#06b6d4;
-                                     display:inline-block;animation:bounce 0.9s ease-in-out infinite;
-                                     animation-delay:320ms"></span>
-                    </div>
-                </div>
-            </div>
+            <div>🤖 escribiendo...</div>
         }
 
         <div id="chat-bottom"></div>
     </div>
 
-    @* ── INPUT BAR ─────────────────────────────────────── *@
+    <!-- INPUT -->
     <div class="flex-shrink-0 px-4 pb-4 pt-3"
          style="background:#111827;border-top:1px solid rgba(255,255,255,.06)">
-        <div class="flex gap-2 items-end" style="max-width:800px;margin:0 auto">
 
-            <div style="flex:1;position:relative">
-                <textarea
-                            id="chat-input"
-                            @oninput="HandleInput"
-                            rows="1"
-                            placeholder="Escribe un comando… ej: 'Enciende la luz roja'"
-                            style="width:100%;background:#1a2132;
-                                     border:1px solid rgba(255,255,255,.1);
-                                     border-radius:14px;padding:12px 16px;
-                                     font-size:13px;color:#f3f4f6;
-                                     font-family:'Inter',system-ui,sans-serif;
-                                     resize:none;outline:none;
-                                     line-height:1.5;min-height:46px;max-height:128px;
-                                     overflow-y:auto;box-sizing:border-box;
-                                     transition:border-color .2s;
-                                     placeholder-color:#4b5563">
-                </textarea>
-            </div>
+        <textarea
+            id="chat-input"
+            @oninput="HandleInput"
+            rows="1"
+            placeholder="Escribe un comando…"
+            style="width:100%;background:#1a2132;color:#f3f4f6;
+                   border-radius:14px;padding:12px 16px;">
+        </textarea>
 
-            <button id="btn-send"
-                    @onclick="EnviarComando"
-                    disabled="@(isTyping || string.IsNullOrWhiteSpace(comando))"
-                    style="flex-shrink:0;width:46px;height:46px;border-radius:14px;
-                           background:linear-gradient(135deg,#06b6d4,#1d4ed8);
-                           border:none;cursor:pointer;
-                           display:flex;align-items:center;justify-content:center;
-                           box-shadow:0 4px 14px rgba(6,182,212,.35);
-                           transition:all .2s;opacity:@(isTyping || string.IsNullOrWhiteSpace(comando) ? "0.35" : "1")">
-                <svg width="20" height="20" viewBox="0 0 24 24c" fill="white">
-                    <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
-                </svg>
-            </button>
-        </div>
-
-        <p style="text-align:center;margin:6px 0 0;font-size:10px;color:#374151">
-            ↵ Enter para enviar &nbsp;·&nbsp; Shift+Enter nueva línea
-        </p>
+        <button @onclick="EnviarComando"
+                disabled="@(isTyping || string.IsNullOrWhiteSpace(comando))"
+                style="margin-top:10px;width:100%;padding:12px;border-radius:14px;
+                       background:linear-gradient(135deg,#06b6d4,#1d4ed8);
+                       color:white;">
+            Enviar
+        </button>
     </div>
 
 </div>
 
 @code {
-    record ChatMessage(string Role, string Content, string? LightColor, DateTime Time);
 
-    string  comando     = "";
-    bool    isTyping    = false;
-    bool    isConnected = true;
-    string? activeLed   = null;
-    CancellationTokenSource?  _cts;
-    DotNetObjectReference<Home>? _dotNetRef;
+    record ChatMessage(string Role, string Content, DateTime Time);
+
+    class ChatResponse
+    {
+        public string? Action { get; set; }
+        public string? Result { get; set; }
+        public string Message { get; set; } = "";
+        public bool Success { get; set; }
+    }
+
+    string comando = "";
+    bool isTyping = false;
+    bool isConnected = true;
 
     List<ChatMessage> messages = new();
+
+    DotNetObjectReference<Home>? _dotNetRef;
 
     protected override void OnInitialized()
     {
         messages.Add(new ChatMessage(
             "assistant",
-            "¡Hola! 👋 Soy tu asistente IoT. Puedo controlar las luces de tu placa Wokwi.\n\nPrueba con frases como:\n• \"Enciende la luz roja\"\n• \"Activa el LED verde\"\n• \"Pon la luz amarilla\"",
-            null,
+            "¡Hola! 👋 Escribe un comando para controlar las luces.",
             DateTime.Now));
-
-        _cts = new CancellationTokenSource();
-        _ = MonitorConexion();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -278,214 +146,75 @@
     async Task EnviarComando()
     {
         if (string.IsNullOrWhiteSpace(comando) || isTyping) return;
+
         var text = comando.Trim();
         comando = "";
+
         StateHasChanged();
-        // Limpia el DOM del textarea también
+
         try { await JS.InvokeVoidAsync("resetInput", "chat-input"); } catch { }
+
         await EnviarComandoConTexto(text);
     }
 
     async Task EnviarComandoConTexto(string userMsg)
     {
-    if (string.IsNullOrWhiteSpace(userMsg) || isTyping) return;
-
-    comando  = "";
-    isTyping = true;
-    StateHasChanged();
-
-    messages.Add(new ChatMessage("user", userMsg, null, DateTime.Now));
-    StateHasChanged();
-    await ScrollToBottom();
-
-    try
-    {
-        var toolName = await llm.ProcesarComando(userMsg);
-
-        // CASO 1: LM Studio apagado o error HTTP
-        if (toolName == null)
-        {
-            isConnected = false;
-
-            messages.Add(new ChatMessage(
-                "assistant",
-                "⚠️ El modelo de IA no está activo.\n\nArranca LM Studio y carga un modelo.",
-                null,
-                DateTime.Now));
-
-            isTyping = false;
-            StateHasChanged();
-            await ScrollToBottom();
-            return;
-        }
-
-        // CASO 2: modelo no responde correctamente
-        if (string.IsNullOrWhiteSpace(toolName))
-        {
-            isConnected = false;
-
-            messages.Add(new ChatMessage(
-                "assistant",
-                "⚠️ El modelo no ha respondido correctamente.\n¿Está cargado en LM Studio?",
-                null,
-                DateTime.Now));
-
-            isTyping = false;
-            StateHasChanged();
-            await ScrollToBottom();
-            return;
-        }
-
-        var lower = toolName.ToLower();
-
-        string? lightColor;
-        string  response;
-
-        // CASO 3: ejecución normal
-        if (lower.Contains("encender_luz_roja"))
-        {
-            await mcp.Ejecutar("encender_luz_roja");
-            activeLed  = "roja";
-            lightColor = "roja";
-            response   = "✅ Luz roja encendida en tu placa Wokwi.";
-            isConnected = true;
-        }
-        else if (lower.Contains("encender_luz_verde"))
-        {
-            await mcp.Ejecutar("encender_luz_verde");
-            activeLed  = "verde";
-            lightColor = "verde";
-            response   = "✅ Luz verde encendida en tu placa Wokwi.";
-            isConnected = true;
-        }
-        else if (lower.Contains("encender_luz_amarilla"))
-        {
-            await mcp.Ejecutar("encender_luz_amarilla");
-            activeLed  = "amarilla";
-            lightColor = "amarilla";
-            response   = "✅ Luz amarilla encendida en tu placa Wokwi.";
-            isConnected = true;
-        }
-        else
-        {
-            // CASO 4: respuesta válida pero no reconocida
-            lightColor = null;
-            response   = "🤔 No identifiqué un comando de luz. Intenta con:\n\"Enciende la luz roja / verde / amarilla\"";
-        }
-
-        messages.Add(new ChatMessage("assistant", response, lightColor, DateTime.Now));
-    }
-    catch (Exception ex)
-    {
-        isConnected = false;
-
-        messages.Add(new ChatMessage(
-            "assistant",
-            $"⚠️ Error de conexión:\n{ex.Message}\n\nRevisa LM Studio o el MCP Server.",
-            null,
-            DateTime.Now));
-    }
-
-    isTyping = false;
-    StateHasChanged();
-    await ScrollToBottom();
-}
-
-    async Task EjecutarTool(string tool)
-    {
-        if (isTyping) return;
+        if (string.IsNullOrWhiteSpace(userMsg) || isTyping) return;
 
         isTyping = true;
         StateHasChanged();
 
-        string? lightColor;
-        string  response;
+        messages.Add(new ChatMessage("user", userMsg, DateTime.Now));
+        
+        StateHasChanged();
+        await ScrollToBottom();
 
         try
         {
-            await mcp.Ejecutar(tool);
+            var http = new HttpClient();
+
+            var body = new
+            {
+                message = userMsg
+            };
+
+            var response = await http.PostAsJsonAsync(
+                "http://localhost:5000/api/chat",
+                body
+            );
+
+            var result = await response.Content.ReadFromJsonAsync<ChatResponse>();
+
             isConnected = true;
 
-            (activeLed, lightColor, response) = tool switch
-            {
-                "encender_luz_roja"     => ("roja",     "roja",     "💡 Luz roja encendida directamente."),
-                "encender_luz_verde"    => ("verde",    "verde",    "💡 Luz verde encendida directamente."),
-                "encender_luz_amarilla" => ("amarilla", "amarilla", "💡 Luz amarilla encendida directamente."),
-                _                       => (activeLed,  null,       "✅ Acción ejecutada.")
-            };
+            messages.Add(new ChatMessage(
+                "assistant",
+                result?.Message ?? "Sin respuesta",
+                DateTime.Now));
         }
         catch (Exception ex)
         {
             isConnected = false;
-            lightColor  = null;
-            response    = $"⚠️ Error al ejecutar '{tool}':\n{ex.Message}";
+
+            messages.Add(new ChatMessage(
+                "assistant",
+                $"Error: {ex.Message}",
+                DateTime.Now));
         }
 
-        messages.Add(new ChatMessage("assistant", response, lightColor, DateTime.Now));
         isTyping = false;
         StateHasChanged();
         await ScrollToBottom();
     }
 
-    // ── Style helpers (inline CSS to avoid Tailwind JIT issues) ──
-
-    string GetActiveLedStyle() => activeLed switch
-    {
-        "roja"     => "background:#ef4444;box-shadow:0 0 8px #ef4444;animation:glow-red 1.4s ease-in-out infinite",
-        "verde"    => "background:#22c55e;box-shadow:0 0 8px #22c55e;animation:glow-green 1.4s ease-in-out infinite",
-        "amarilla" => "background:#eab308;box-shadow:0 0 8px #eab308;animation:glow-yellow 1.4s ease-in-out infinite",
-        _          => "background:#6b7280"
-    };
-
-    string GetBubbleStyle(string? lightColor) => lightColor switch
-    {
-        "roja"     => "background:linear-gradient(135deg,#1a2132,#2d1515);",
-        "verde"    => "background:linear-gradient(135deg,#1a2132,#0d2b1a);",
-        "amarilla" => "background:linear-gradient(135deg,#1a2132,#2a220d);",
-        _          => "background:#1a2132;"
-    };
-
-    string GetLedStyle(string? lightColor) => lightColor switch
-    {
-        "roja"     => "background:#ef4444;box-shadow:0 0 8px #ef4444;animation:glow-red 1.4s ease-in-out infinite",
-        "verde"    => "background:#22c55e;box-shadow:0 0 8px #22c55e;animation:glow-green 1.4s ease-in-out infinite",
-        "amarilla" => "background:#eab308;box-shadow:0 0 8px #eab308;animation:glow-yellow 1.4s ease-in-out infinite",
-        _          => "background:#6b7280"
-    };
-
     async Task ScrollToBottom()
     {
         try { await JS.InvokeVoidAsync("scrollToBottom", "chat-container"); }
-        catch { /* WebView not ready */ }
+        catch { }
     }
-    
-    async Task MonitorConexion()
-    {
-        while (!_cts!.IsCancellationRequested)
-        {
-            try
-            {
-                var disponible = await llm.IsModelAvailable();
 
-                if (disponible != isConnected)
-                {
-                    isConnected = disponible;
-                    StateHasChanged();
-                }
-            }
-            catch
-            {
-                isConnected = false;
-                StateHasChanged();
-            }
-
-            await Task.Delay(3000); // cada 3 segundos
-        }
-    }
-    
     public void Dispose()
     {
-        _cts?.Cancel();
         _dotNetRef?.Dispose();
     }
 }

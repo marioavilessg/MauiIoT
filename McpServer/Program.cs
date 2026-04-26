@@ -1,61 +1,72 @@
-﻿using System.Text;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using ModelContextProtocol.Server;
+using System.ComponentModel;
+using System.Text;
+using System.Net.Http;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = Host.CreateApplicationBuilder(args);
 
-// Para usar HttpClient correctamente
-builder.Services.AddHttpClient();
+builder.Services
+    .AddMcpServer()
+    .WithStdioServerTransport()
+    .WithToolsFromAssembly();
 
-var app = builder.Build();
+await builder.Build().RunAsync();
 
-
-// TOOL: LUZ ROJA
-app.MapPost("/tools/encender_luz_roja", async (IHttpClientFactory factory) =>
+[McpServerToolType]
+public class Tools
 {
-    var http = factory.CreateClient();
+    static HttpClient client = new HttpClient();
 
-    await http.PostAsync("http://localhost:1880/leds",
-        new StringContent("encender_rojo", Encoding.UTF8, "text/plain"));
+    [McpServerTool, Description("Enciende la luz roja")] 
+    public static async Task<string> EncenderLuzRoja()
+    {
+        await Enviar("encender_rojo");
+        return "Luz roja encendida";
+    }
 
-    Console.WriteLine("Luz roja encendida");
+    [McpServerTool, Description("Enciende la luz verde")]
+    public static async Task<string> EncenderLuzVerde()
+    {
+        await Enviar("encender_verde");
+        return "Luz verde encendida";
+    }
 
-    return Results.Ok("rojo");
-});
+    [McpServerTool, Description("Enciende la luz amarilla")]
+    public static async Task<string> EncenderLuzAmarilla()
+    {
+        await Enviar("encender_amarillo");
+        return "Luz amarilla encendida";
+    }
 
+    [McpServerTool, Description("Llamar cuando el usuario pide algo que no se puede realizar")]
+    public static async Task<string> NoAction()
+    {
+        return $"No estoy programado para hacer eso";
+    }
 
-// TOOL: LUZ VERDE
-app.MapPost("/tools/encender_luz_verde", async (IHttpClientFactory factory) =>
-{
-    var http = factory.CreateClient();
+    [McpServerTool, Description("Lista todas las herramientas disponibles y explica qué pueden hacer")]
+    public static async Task<string> ListarTools()
+    {
+        var tools = new[]
+        {
+        "encender_luz_roja - Enciende la luz roja",
+        "encender_luz_amarilla - Enciende la luz amarilla",
+        "encender_luz_verde - Enciende la luz verde",
+        "no_action - Se llama cuando no se puede realizar una acción",
+        "listar_tools - Muestra todas las herramientas disponibles"
+    };
 
-    await http.PostAsync("http://localhost:1880/leds",
-        new StringContent("encender_verde", Encoding.UTF8, "text/plain"));
+        return "Herramientas disponibles:\n" + string.Join("\n", tools);
+    }
 
-    Console.WriteLine("Luz verde encendida");
+    static async Task Enviar(string payload)
+    {
+        var content = new StringContent(payload, Encoding.UTF8);
+        content.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
 
-    return Results.Ok("verde");
-});
-
-
-// TOOL: LUZ AMARILLA
-app.MapPost("/tools/encender_luz_amarilla", async (IHttpClientFactory factory) =>
-{
-    var http = factory.CreateClient();
-
-    await http.PostAsync("http://localhost:1880/leds",
-        new StringContent("encender_amarillo", Encoding.UTF8, "text/plain"));
-
-    Console.WriteLine("Luz amarilla encendida");
-
-    return Results.Ok("amarilla");
-});
-
-app.MapGet("/tools", () => new[]
-{
-    "encender_luz_roja",
-    "encender_luz_verde",
-    "encender_luz_amarilla"
-});
-
-
-// PUERTO
-app.Run("http://localhost:5000");
+        await client.PostAsync("http://localhost:1880/leds", content);
+    }
+}
